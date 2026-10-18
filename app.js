@@ -57,5 +57,5 @@ $('#addMedicine').onclick = () => $('#medicineDialog').showModal();
 $('#medicineForm').onsubmit = e => { e.preventDefault(); const f = new FormData(e.target); state.doses.push({ id: crypto.randomUUID(), name: f.get('name').trim(), times: [f.get('time')], course: f.get('course') === 'on' }); save(); $('#medicineDialog').close(); renderHome(); };
 renderHome();
 if (cloud.ready) {
-  cloud.pull().then(remote => { if (remote) { state = remote; localStorage.setItem(KEY, JSON.stringify(state)); renderHome(); } }).catch(() => {});
+  cloud.pull().then(remote => { if (remote) { state = remote; localStorage.setItem(KEY, JSON.stringify(state)); renderHome(); } else { cloud.push(state).catch(() => {}); } }).catch(() => {});
 }
