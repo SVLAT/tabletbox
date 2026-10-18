@@ -1,5 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import { SUPABASE_URL, SUPABASE_ANON_KEY } from './supabase-config.js';
+import { SUPABASE_URL, SUPABASE_ANON_KEY } from './supabase-config.js?v=11';
 
 const ready = Boolean(SUPABASE_URL && SUPABASE_ANON_KEY);
 const client = ready ? createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;

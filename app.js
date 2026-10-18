@@ -1,4 +1,4 @@
-import { cloud } from './cloud.js';
+import { cloud } from './cloud.js?v=11';
 
 const $ = s => document.querySelector(s);
 const KEY = 'pillbox:local:v1';
