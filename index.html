@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#d9eaf3" />
+    <meta name="description" content="Мягкие и понятные напоминания о лекарствах" />
+    <link rel="manifest" href="manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="icon.svg" />
+    <title>Ритм · лекарства вовремя</title>
+    <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="overrides.css" />
+    <link rel="stylesheet" href="quick.css" />
+    <link rel="stylesheet" href="latest.css" />
+    <link rel="stylesheet" href="tabs.css" />
+    <link rel="stylesheet" href="test-ready.css" />
+    <link rel="stylesheet" href="account.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow" id="todayLabel">Сегодня</p>
+          <h1>Доброе утро, Лиза</h1>
+        </div>
+        <button class="avatar" aria-label="Открыть профиль">А</button>
+      </header>
+
+      <section class="hero-card" aria-label="Следующий приём">
+        <div class="hero-orb orb-one"></div><div class="hero-orb orb-two"></div>
+        <p class="card-label">Следующий приём</p>
+        <div class="next-dose">
+          <div class="pill-icon coral">✦</div>
+          <div><h2 id="nextName">Витамин D3</h2><p id="nextDetails">через 45 минут · после еды</p></div>
+          <strong id="nextTime">09:30</strong>
+        </div>
+        <button class="primary-button" id="takeNext">Отметить как выпитое <span>→</span></button>
+      </section>
+
+      <section class="quick-dose quick-top" id="quickDose">
+        <div><p class="eyebrow">По надобности</p><h3>Быстрый приём таблетки</h3><p>Сохранённые лекарства на каждый день</p></div>
+        <button id="openQuickDose">+ Выбрать</button>
+      </section>
+
+      <section class="section-heading single-heading">
+        <h2>Расписание на сегодня</h2>
+        <span class="counter" id="doneCounter">0 из 0</span>
+      </section>
+      <section class="schedule" id="schedule" aria-live="polite"></section>
+      <section class="event-dose" id="eventDose"></section>
+      <section class="prn-summary" id="prnSummary"></section>
+
+      <section class="section-heading course-heading">
+        <div><p class="eyebrow">В процессе</p><h2>Мои курсы</h2></div>
+        <button class="text-button" id="showCourses">Все</button>
+      </section>
+      <section class="courses" id="courses"></section>
+    </main>
+
+    <section class="stats-view" id="statsView" hidden>
+      <header class="view-header"><button class="back-button" data-home>←</button><div><p class="eyebrow">Моя динамика</p><h2>Статистика</h2></div></header>
+      <div class="periods" id="periods"><button class="active" data-period="month">Месяц</button><button data-period="year">Год</button><button data-period="all">Всё время</button></div>
+      <section><p class="eyebrow">Текущие курсы</p><div id="statsCourses"></div></section>
+      <section class="stats-section"><p class="eyebrow">Быстрые лекарства</p><div id="statsQuick" class="stats-quick"></div></section>
+    </section>
+    <section class="settings-view" id="settingsView" hidden>
+      <header class="view-header"><button class="back-button" data-home>←</button><div><p class="eyebrow">Приложение</p><h2>Настройки</h2></div></header>
+      <div class="settings-list"><button id="accountButton">Аккаунт <span>›</span></button><button>Мои курсы <span>›</span></button><button>Мои препараты <span>›</span></button><button>Оформление <span>›</span></button><button>Обратиться в поддержку <span>›</span></button></div>
+    </section>
+
+    <section class="calendar-view" id="calendarView" hidden>
+      <header class="calendar-header"><button class="back-button" id="backHome">←</button><div><p class="eyebrow">Календарь</p><h2>Октябрь 2026</h2></div></header>
+      <div class="month-card"><div class="weekdays"><span>Пн</span><span>Вт</span><span>Ср</span><span>Чт</span><span>Пт</span><span>Сб</span><span>Вс</span></div><div class="days" id="calendarDays"></div></div>
+      <section class="calendar-summary"><p class="eyebrow">Выбранный день</p><h2 id="calendarDate">14 октября</h2><p>Открой день, чтобы увидеть все назначенные приёмы.</p></section>
+    </section>
+
+    <nav class="bottom-nav" aria-label="Главная навигация">
+      <button class="nav-item active"><span>⌂</span>Главная</button>
+      <button class="nav-item" id="calendarButton"><span>□</span>Календарь</button>
+      <button class="add-button" id="addMedicine" aria-label="Добавить лекарство">+</button>
+      <button class="nav-item" id="statsButton"><span>◔</span>Статистика</button>
+      <button class="nav-item" id="settingsButton"><span>☼</span>Настройки</button>
+    </nav>
+
+    <dialog id="medicineDialog">
+      <form method="dialog" id="medicineForm">
+        <div class="dialog-header"><div><p class="eyebrow">Новый приём</p><h2>Добавить лекарство</h2></div><button class="close" value="cancel" aria-label="Закрыть">×</button></div>
+        <label>Название<input required name="name" placeholder="Например, Магний B6" /></label>
+        <label>Время приёма<input required name="time" type="time" value="09:00" /></label>
+        <label class="switch-row"><span><b>Это курс</b><small>Добавить дни и прогресс</small></span><input type="checkbox" name="course" id="courseToggle" checked /></label>
+        <div id="courseFields"><label>Длительность, дней<input name="days" type="number" min="1" value="14" /></label><label>Сколько дней уже пройдено<input name="completedDays" type="number" min="0" value="0" /></label></div>
+        <label>Комментарий <input name="note" placeholder="Например, после завтрака" /></label>
+        <button class="primary-button" value="default">Сохранить приём <span>→</span></button>
+      </form>
+    </dialog>
+
+    <dialog id="reminderDialog" class="reminder-dialog">
+      <div class="reminder-icon">✓</div><p class="eyebrow">Напоминание</p><h2>Удалось принять лекарство?</h2><p id="reminderText">Подтвердите приём, чтобы дневник был точным.</p>
+      <div class="dialog-actions"><button class="soft-button" id="laterReminder">Позже</button><button class="primary-button" id="confirmReminder">Да, выпито</button></div>
+    </dialog>
+    <dialog id="quickDoseDialog">
+      <form method="dialog" id="quickDoseForm">
+        <div class="dialog-header"><div><p class="eyebrow">По надобности</p><h2>Отметить таблетку</h2></div><button class="close" value="cancel" aria-label="Закрыть">×</button></div>
+        <label>Препарат<select required name="medicine" id="quickMedicine"></select></label>
+        <label>Количество <input required name="amount" type="number" min="1" value="1" /></label>
+        <label>Единица <select name="unit"><option>таблетка</option><option>капсула</option><option>саше</option><option>мг</option><option>мл</option><option>капли</option><option>доза</option></select></label>
+        <button class="primary-button" value="default">Отметить приём <span>→</span></button>
+        <button class="manage-list" type="button" id="manageQuickList">Изменить список лекарств</button>
+      </form>
+    </dialog>
+    <dialog id="quickListDialog"><form method="dialog" id="quickListForm"><div class="dialog-header"><div><p class="eyebrow">На каждый день</p><h2>Мои быстрые лекарства</h2></div><button class="close" value="cancel">×</button></div><div id="quickListItems"></div><label>Новый препарат<input name="newMedicine" placeholder="Например, Нурофен — от боли" /></label><button class="primary-button" value="default">Добавить в список <span>→</span></button></form></dialog>
+    <dialog id="accountDialog"><form method="dialog" id="accountForm"><div class="dialog-header"><div><p class="eyebrow">Профиль</p><h2>Личный аккаунт</h2></div><button class="close" value="cancel">×</button></div><p class="account-note" id="accountNote">Пока профиль хранится на этом устройстве. Подключение к облаку добавит синхронизацию и настоящий вход.</p><label>Ваше имя<input required name="name" placeholder="Например, Лиза" /></label><label>Почта для входа <input name="email" type="email" placeholder="liza@example.com" /></label><button class="primary-button" value="default">Сохранить профиль <span>→</span></button></form></dialog>
+    <div id="toast" role="status"></div>
+    <script type="module" src="app.js"></script>
+    <script src="pwa.js"></script>
+  </body>
+</html>
