@@ -7,7 +7,7 @@
     <meta name="description" content="Мягкие и понятные напоминания о лекарствах" />
     <link rel="manifest" href="manifest.webmanifest" />
     <link rel="apple-touch-icon" href="icon.svg" />
-    <title>Ритм · лекарства вовремя</title>
+    <title>Таблетница · лекарства вовремя</title>
     <link rel="stylesheet" href="styles.css" />
     <link rel="stylesheet" href="overrides.css" />
     <link rel="stylesheet" href="quick.css" />
@@ -15,6 +15,7 @@
     <link rel="stylesheet" href="tabs.css" />
     <link rel="stylesheet" href="test-ready.css" />
     <link rel="stylesheet" href="account.css" />
+    <link rel="stylesheet" href="release.css?v=12" />
   </head>
   <body>
     <main class="app-shell">
@@ -23,7 +24,6 @@
           <p class="eyebrow" id="todayLabel">Сегодня</p>
           <h1>Доброе утро, Лиза</h1>
         </div>
-        <button class="avatar" aria-label="Открыть профиль">А</button>
       </header>
 
       <section class="hero-card" aria-label="Следующий приём">
@@ -31,8 +31,8 @@
         <p class="card-label">Следующий приём</p>
         <div class="next-dose">
           <div class="pill-icon coral">✦</div>
-          <div><h2 id="nextName">Витамин D3</h2><p id="nextDetails">через 45 минут · после еды</p></div>
-          <strong id="nextTime">09:30</strong>
+          <div><h2 id="nextName">Загружаем дневник</h2><p id="nextDetails">Приёмы на сегодня</p></div>
+          <strong id="nextTime"></strong>
         </div>
         <button class="primary-button" id="takeNext">Отметить как выпитое <span>→</span></button>
       </section>
@@ -69,17 +69,19 @@
     </section>
 
     <section class="calendar-view" id="calendarView" hidden>
-      <header class="calendar-header"><button class="back-button" id="backHome">←</button><div><p class="eyebrow">Календарь</p><h2>Октябрь 2026</h2></div></header>
+      <header class="calendar-header"><button class="back-button" id="backHome">←</button><div><p class="eyebrow">Календарь</p><h2 id="calendarMonth"></h2></div></header>
+      <div class="month-controls"><button id="prevMonth">← Месяц</button><button id="nextMonth">Месяц →</button></div>
+      <p class="calendar-legend">● Зелёный — всё отмечено · ● Персиковый — есть неотмеченные приёмы · Серый — нет данных</p>
       <div class="month-card"><div class="weekdays"><span>Пн</span><span>Вт</span><span>Ср</span><span>Чт</span><span>Пт</span><span>Сб</span><span>Вс</span></div><div class="days" id="calendarDays"></div></div>
-      <section class="calendar-summary"><p class="eyebrow">Выбранный день</p><h2 id="calendarDate">14 октября</h2><p>Открой день, чтобы увидеть все назначенные приёмы.</p></section>
+      <section class="calendar-summary"><p class="eyebrow">Выбранный день</p><h2 id="calendarDate">14 октября</h2><div id="calendarDetails"></div></section>
     </section>
 
     <nav class="bottom-nav" aria-label="Главная навигация">
-      <button class="nav-item active"><span>⌂</span>Главная</button>
-      <button class="nav-item" id="calendarButton"><span>□</span>Календарь</button>
+      <button class="nav-item active" data-view="home"><span>⌂</span>Главная</button>
+      <button class="nav-item" id="calendarButton" data-view="calendar"><span>□</span>Календарь</button>
       <button class="add-button" id="addMedicine" aria-label="Добавить лекарство">+</button>
-      <button class="nav-item" id="statsButton"><span>◔</span>Статистика</button>
-      <button class="nav-item" id="settingsButton"><span>☼</span>Настройки</button>
+      <button class="nav-item" id="statsButton" data-view="stats"><span>◔</span>Статистика</button>
+      <button class="nav-item" id="settingsButton" data-view="settings"><span>☼</span>Настройки</button>
     </nav>
 
     <dialog id="medicineDialog">
@@ -109,9 +111,9 @@
       </form>
     </dialog>
     <dialog id="quickListDialog"><form method="dialog" id="quickListForm"><div class="dialog-header"><div><p class="eyebrow">На каждый день</p><h2>Мои быстрые лекарства</h2></div><button class="close" value="cancel">×</button></div><div id="quickListItems"></div><label>Новый препарат<input name="newMedicine" placeholder="Например, Нурофен — от боли" /></label><button class="primary-button" value="default">Добавить в список <span>→</span></button></form></dialog>
-    <dialog id="accountDialog"><form method="dialog" id="accountForm"><div class="dialog-header"><div><p class="eyebrow">Профиль</p><h2>Личный аккаунт</h2></div><button class="close" value="cancel">×</button></div><p class="account-note" id="accountNote">Пока профиль хранится на этом устройстве. Подключение к облаку добавит синхронизацию и настоящий вход.</p><label>Ваше имя<input required name="name" placeholder="Например, Лиза" /></label><label>Почта для входа <input name="email" type="email" placeholder="liza@example.com" /></label><button class="primary-button" value="default">Сохранить профиль <span>→</span></button></form></dialog>
+    <dialog id="accountDialog"><form method="dialog" id="accountForm"><div class="dialog-header"><div><p class="eyebrow">Профиль</p><h2>Личный аккаунт</h2></div><button class="close" value="cancel">×</button></div><p class="account-note" id="accountNote"></p><label>Полное имя<input required name="fullName" placeholder="Например, Роман Вдовин" /></label><label>Как вас называть?<input required name="displayName" placeholder="Например, Рома" /></label><label id="accountEmailField">Почта для входа <input name="email" type="email" placeholder="liza@example.com" /></label><button class="primary-button" value="default">Сохранить профиль <span>→</span></button></form></dialog>
     <div id="toast" role="status"></div>
-    <script type="module" src="app.js?v=11"></script>
+    <script type="module" src="app.js?v=12"></script>
     <script src="pwa.js"></script>
   </body>
 </html>

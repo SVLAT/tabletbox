@@ -1,5 +1,5 @@
-const CACHE = 'ritm-v11';
-const ASSETS = ['./', './index.html', './styles.css', './overrides.css', './quick.css', './latest.css', './tabs.css', './test-ready.css', './account.css', './app.js', './cloud.js', './supabase-config.js', './pwa.js', './manifest.webmanifest', './icon.svg'];
+const CACHE = 'tabletbox-v12';
+const ASSETS = ['./','./index.html','./styles.css','./overrides.css','./quick.css','./latest.css','./tabs.css','./test-ready.css','./account.css','./release.css?v=12','./app.js?v=12','./model.js?v=12','./cloud.js?v=12','./supabase-config.js?v=12','./pwa.js','./manifest.webmanifest','./icon.svg'];
 self.addEventListener('install', event => event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(ASSETS)).then(() => self.skipWaiting())));
 self.addEventListener('activate', event => event.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(key => key !== CACHE).map(key => caches.delete(key)))).then(() => self.clients.claim())));
-self.addEventListener('fetch', event => event.respondWith(fetch(event.request).then(response => { const copy = response.clone(); caches.open(CACHE).then(cache => cache.put(event.request, copy)); return response; }).catch(() => caches.match(event.request))));
+self.addEventListener('fetch', event => {if(event.request.method!=='GET'||new URL(event.request.url).origin!==self.location.origin)return;event.respondWith(fetch(event.request).then(response=>{if(response.ok){const copy=response.clone();event.waitUntil(caches.open(CACHE).then(cache=>cache.put(event.request,copy)));}return response;}).catch(()=>caches.match(event.request)));});

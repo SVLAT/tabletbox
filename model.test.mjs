@@ -1,0 +1,11 @@
+import assert from 'node:assert/strict';
+import {defaults,captureDays,nextDose,dateKey,merge,normalize,plan} from './model.js';
+const s=defaults();s.trackedSince='2026-10-23';captureDays(s,'2026-10-24');
+const first=nextDose(s,'2026-10-23');assert.equal(first.time,'12:00');
+s.log.push({id:'a',type:'dose',doseId:first.doseId,time:first.time,date:'2026-10-23',at:'2026-10-23T08:00:00Z'});
+const second=nextDose(s,'2026-10-23');assert.equal(second.time,'12:00');assert.notEqual(second.doseId,first.doseId);
+const restored=normalize(JSON.parse(JSON.stringify(s)));assert.equal(restored.log[0].date,'2026-10-23');assert.equal(plan(restored,'2026-10-23').length,7);
+restored.doses[0].times=['09:00'];assert.equal(plan(restored,'2026-10-23').length,7,'past snapshots immutable');assert.equal(nextDose(restored,'2026-10-24').time,'12:00','next day independent');
+const remote=JSON.parse(JSON.stringify(s));remote.log.push({id:'b',type:'quick',date:'2026-10-24'});const united=merge(s,remote);assert.equal(united.log.length,2);assert.equal(merge(united,remote).log.length,2,'sync idempotent');
+assert.equal(dateKey(new Date(2026,9,24,0,5)),'2026-10-24');assert.equal(plan({...defaults(),days:{}},'2027-01-14').length,1,'course ends after 3 calendar months');
+console.log('PASS: queue ordering, yesterday persistence, immutable schedules, daily reset, sync merge, local dates, course bounds');

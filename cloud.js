@@ -1,24 +1,11 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import { SUPABASE_URL, SUPABASE_ANON_KEY } from './supabase-config.js?v=11';
-
-const ready = Boolean(SUPABASE_URL && SUPABASE_ANON_KEY);
-const client = ready ? createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
-
-export const cloud = {
-  ready,
-  async session() { return client ? (await client.auth.getSession()).data.session : null; },
-  async signIn(email) {
-    if (!client) throw new Error('Supabase ещё не подключён');
-    return client.auth.signInWithOtp({ email, options: { emailRedirectTo: window.location.origin + window.location.pathname } });
-  },
-  async pull() {
-    const session = await this.session(); if (!session) return null;
-    const { data, error } = await client.from('app_state').select('data').eq('user_id', session.user.id).maybeSingle();
-    if (error) throw error; return data?.data || null;
-  },
-  async push(data) {
-    const session = await this.session(); if (!session) return;
-    const { error } = await client.from('app_state').upsert({ user_id: session.user.id, data, updated_at: new Date().toISOString() });
-    if (error) throw error;
-  }
+import { SUPABASE_URL, SUPABASE_ANON_KEY } from './supabase-config.js?v=12';
+let client;
+export const cloud={
+ ready:Boolean(SUPABASE_URL&&SUPABASE_ANON_KEY),
+ async init(){if(!this.ready)return null;const {createClient}=await import('https://esm.sh/@supabase/supabase-js@2');client=createClient(SUPABASE_URL,SUPABASE_ANON_KEY);const {data,error}=await client.auth.getSession();if(error)throw error;return data.session;},
+ watch(fn){client?.auth.onAuthStateChange((event,session)=>{if(event==='SIGNED_IN'||event==='SIGNED_OUT')setTimeout(()=>fn(session),0);});},
+ async signIn(email){if(!client)throw Error('Нет соединения с сервисом входа');const {error}=await client.auth.signInWithOtp({email,options:{emailRedirectTo:location.origin+location.pathname}});if(error)throw error;},
+ async signOut(){const {error}=await client.auth.signOut();if(error)throw error;},
+ async pull(userId){const {data,error}=await client.from('app_state').select('data').eq('user_id',userId).maybeSingle();if(error)throw error;return data?.data||null;},
+ async push(userId,data){const {error}=await client.from('app_state').upsert({user_id:userId,data,updated_at:new Date().toISOString()});if(error)throw error;}
 };
