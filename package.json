@@ -1,1 +1,1 @@
-{"private":true,"type":"module","scripts":{"test":"node model.test.mjs && node update.test.mjs && node cloud.test.mjs"}}
+{"private":true,"type":"module","scripts":{"test":"node model.test.mjs && node update.test.mjs && node cloud.test.mjs && node schedule.test.mjs"}}

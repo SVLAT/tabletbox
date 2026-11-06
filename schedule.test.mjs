@@ -1,0 +1,10 @@
+import assert from 'node:assert/strict';
+import {themeAt,nextThemeDelay} from './theme.js';
+import {courseEnd,courseSummary,daysBetween} from './dates.js';
+import {createDose,defaults,refreshToday,plan} from './model.js';
+for(const [date,theme] of [['2026-11-07T04:59:59.999Z','dark'],['2026-11-07T05:00:00Z','light'],['2026-11-07T12:59:59.999Z','light'],['2026-11-07T13:00:00Z','dark'],['2026-11-07T20:00:00Z','dark']])assert.equal(themeAt(new Date(date)),theme,date);
+assert.equal(nextThemeDelay(new Date('2026-11-07T04:59:59.999Z')),31);assert.equal(nextThemeDelay(new Date('2026-11-07T13:00:00Z')),16*3600000+30);
+assert.equal(courseEnd('2026-11-07',14),'2026-11-21');assert.equal(courseEnd('2026-12-31',1),'2027-01-01');assert.equal(courseEnd('2028-02-28',2),'2028-03-01');assert.equal(daysBetween('2026-03-01','2026-04-01'),31);
+const dose=createDose({name:'Тестовый курс',start:'2026-10-20',days:30,time:'12:00',course:true});assert.equal(dose.start,'2026-10-20');assert.equal(dose.end,'2026-11-19');assert.deepEqual(courseSummary(dose,'2026-11-07'),{total:30,day:19,last:'2026-11-18'});assert.equal(courseSummary(dose,'2026-10-19').day,0);
+assert.throws(()=>courseEnd('2026-02-30',14));assert.throws(()=>courseEnd('2026-11-07',0));const s=defaults();s.doses=[dose];refreshToday(s,'2026-11-07');assert.equal(plan(s,'2026-11-07').length,1);assert.equal(plan(s,'2026-11-19').length,0);
+console.log('PASS: Dubai 09:00/17:00 boundaries, exact next switch, selected start date, inclusive duration, leap year, future course, active bounds');

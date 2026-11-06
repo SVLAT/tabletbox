@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <meta name="theme-color" content="#0c1726" />
+    <meta name="theme-color" content="#141416" />
     <meta name="description" content="Мягкие и понятные напоминания о лекарствах" />
     <link rel="manifest" href="manifest.webmanifest" />
     <link rel="apple-touch-icon" href="icon.svg" />
@@ -17,6 +17,7 @@
     <link rel="stylesheet" href="account.css" />
     <link rel="stylesheet" href="release.css?v=12" />
     <link rel="stylesheet" href="update.css?v=14" />
+    <link rel="stylesheet" href="night.css?v=15" />
   </head>
   <body>
     <main class="app-shell">
@@ -91,8 +92,10 @@
         <label>Название<input required name="name" placeholder="Например, Магний B6" /></label>
         <label>Время приёма<input required name="time" type="time" value="09:00" /></label>
         <label class="switch-row"><span><b>Это курс</b><small>Добавить дни и прогресс</small></span><input type="checkbox" name="course" id="courseToggle" checked /></label>
-        <div id="courseFields"><label>Длительность, дней<input name="days" type="number" min="1" value="14" /></label><label>Сколько дней уже пройдено<input name="completedDays" type="number" min="0" value="0" /></label></div>
+        <label>Дата начала приёма<input name="start" type="date" required /></label>
+        <div id="courseFields"><label>Длительность, дней<input name="days" type="number" min="1" max="3660" value="14" required /></label><p id="newCourseDates" class="section-hint" aria-live="polite"></p></div>
         <label>Комментарий <input name="note" placeholder="Например, после завтрака" /></label>
+        <p id="newCourseError" role="alert" class="section-hint"></p>
         <button class="primary-button" value="default">Сохранить приём <span>→</span></button>
       </form>
     </dialog>
@@ -121,13 +124,14 @@
     <dialog id="editCourseDialog"><form id="editCourseForm"><div class="dialog-header"><h2>Редактировать курс</h2><button class="close" type="button" aria-label="Закрыть">×</button></div>
       <input name="id" type="hidden"><label>Название<input name="name" required maxlength="100"></label>
       <label>Начало курса<input name="start" type="date" required></label><label>Длительность, дней<input name="days" type="number" required min="1" max="3660"></label>
+      <p id="editCourseDates" class="section-hint" aria-live="polite"></p>
       <label>Время приёмов<input name="times" placeholder="12:00, 16:00, 20:00" required></label>
       <label>Короткое описание<textarea name="description" maxlength="240" rows="3" placeholder="Например, после еды"></textarea></label>
       <p class="section-hint">Изменения действуют с сегодняшнего дня. Уже сделанные отметки не удаляются.</p><p id="courseError" role="alert"></p>
       <button class="primary-button" type="submit">Сохранить курс</button><button id="archiveCourse" class="account-footer danger" type="button">Удалить курс из расписания</button>
     </form></dialog>
-    <dialog id="themeDialog"><div class="theme-panel"><div class="dialog-header"><h2>Оформление</h2><button class="close" type="button" aria-label="Закрыть">×</button></div><button class="theme-choice" data-theme="dark">Ночной голубой <small>Тёмный фон, мягкие голубые акценты</small></button><button class="theme-choice" data-theme="light">Светлая пастель <small>Светлая тема</small></button></div></dialog>
-    <script type="module" src="app.js?v=14"></script>
+    <dialog id="themeDialog"><div class="theme-panel"><div class="dialog-header"><h2>Оформление</h2><button class="close" type="button" aria-label="Закрыть">×</button></div><p>Тема переключается автоматически по времени Дубая (UTC+4).</p><p>09:00–17:00 — светлая пастель.<br>17:00–09:00 — тёмная тема.</p></div></dialog>
+    <script type="module" src="app.js?v=15"></script>
     <script src="pwa.js"></script>
   </body>
 </html>

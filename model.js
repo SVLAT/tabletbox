@@ -1,3 +1,4 @@
+import {courseEnd} from './dates.js?v=15';
 export const dateKey = (d = new Date()) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 export const defaults = () => ({ profile:{fullName:'',displayName:'Лиза'}, quick:['Парацетамол — от температуры','Цитрамон — от головы','Железо — во время месячных'], doses:[{id:'motilium',name:'Мотилиум',times:['12:00','16:00','20:00'],start:'2026-10-14',end:'2027-01-14'},{id:'cinnarizine',name:'Цинаризин',times:['12:00','16:00','20:00'],start:'2026-10-14',end:'2027-01-14'},{id:'lamictal',name:'Ламиктал · 150 мг',times:['21:00'],start:'2026-10-14'}],log:[],days:{},trackedSince:dateKey(),updatedAt:0 });
 export function normalize(raw) { const base=defaults(); if(!raw || !Array.isArray(raw.doses)||!Array.isArray(raw.log))return base; const s={...base,...raw,profile:{...base.profile,...raw.profile},days:raw.days||{}};s.trackedSince=raw.trackedSince||raw.log.map(e=>e.date).filter(Boolean).sort()[0]||base.trackedSince;s.profile.displayName=raw.profile?.displayName||raw.profile?.name||'Лиза';s.doses=s.doses.map(d=>({...d,start:d.start||'2026-10-14',end:d.end||(['motilium','cinnarizine'].includes(d.id)?'2027-01-14':undefined)}));s.log=s.log.map(e=>({...e,id:e.id||[e.type,e.date,e.doseId,e.time,e.at].join('|')}));return s; }
@@ -11,7 +12,8 @@ export function refreshToday(s,date=dateKey()) { const old=s.days[date]||[];dele
 export function editCourse(s,id,{name,start,days,times,description},date=dateKey()){
  const dose=s.doses.find(d=>d.id===id);if(!dose)throw Error('Курс не найден');
  if(!name.trim()||!/^\d{4}-\d{2}-\d{2}$/.test(start)||!Number.isInteger(days)||days<1||days>3660||!times.length||times.some(t=>!/^([01]\d|2[0-3]):[0-5]\d$/.test(t)))throw Error('Проверьте название, дату, длительность и время приёмов');
- const end=new Date(start+'T12:00:00');if(Number.isNaN(+end)||dateKey(end)!==start)throw Error('Проверьте дату начала');end.setDate(end.getDate()+days);
- Object.assign(dose,{name:name.trim(),start,end:dateKey(end),times:[...new Set(times)].sort(),description:description.trim().slice(0,240)});refreshToday(s,date);
+ const end=courseEnd(start,days);
+ Object.assign(dose,{name:name.trim(),start,end,times:[...new Set(times)].sort(),description:description.trim().slice(0,240)});refreshToday(s,date);
 }
+export function createDose({name,start,time,days,course,description=''}){if(!name.trim()||!/^([01]\d|2[0-3]):[0-5]\d$/.test(time))throw Error('Проверьте название и время');const end=courseEnd(start,course?days:1);return {id:crypto.randomUUID(),name:name.trim(),start,times:[time],description:description.trim().slice(0,240),...(course?{end}:{})};}
 export function archiveCourse(s,id,date=dateKey()){const d=s.doses.find(d=>d.id===id);if(!d)throw Error('Курс не найден');d.archivedAt=date;refreshToday(s,date);}
