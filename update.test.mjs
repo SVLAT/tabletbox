@@ -1,0 +1,13 @@
+import assert from 'node:assert/strict';
+import {defaults,captureDays,editCourse,archiveCourse,plan,merge,refreshToday} from './model.js';
+import {bounded} from './network.js';
+const s=defaults();s.trackedSince='2026-11-06';captureDays(s,'2026-11-07');const yesterday=JSON.stringify(s.days['2026-11-06']);
+s.log.push({id:'test-intake',date:'2026-11-07',type:'dose',doseId:'motilium',time:'12:00'});
+editCourse(s,'motilium',{name:'Новый курс',start:'2026-11-07',days:14,times:['09:00','18:00'],description:'После еды'},'2026-11-07');
+assert.equal(s.doses[0].end,'2026-11-21');assert.equal(s.doses[0].description,'После еды');assert.equal(JSON.stringify(s.days['2026-11-06']),yesterday);assert(plan(s,'2026-11-07').some(p=>p.doseId==='motilium'&&p.time==='12:00'),'taken dose survives edits');
+archiveCourse(s,'motilium','2026-11-07');assert(!plan(s,'2026-11-08').some(p=>p.doseId==='motilium'));assert(plan(s,'2026-11-07').some(p=>p.doseId==='motilium'&&p.time==='12:00'));assert.equal(s.log.length,1);
+delete s.doses[0].archivedAt;refreshToday(s,'2026-11-07');assert(plan(s,'2026-11-07').some(p=>p.time==='09:00'));
+assert.throws(()=>editCourse(s,'motilium',{name:'x',start:'2026-11-07',days:0,times:['25:00'],description:''}));
+const newer=structuredClone(s);newer.updatedAt=2;newer.days['2026-11-07']=[{doseId:'new',time:'08:00'}];assert.equal(merge(s,newer).days['2026-11-07'][0].doseId,'new');
+await assert.rejects(bounded(new Promise(()=>{}),5),{code:'network_timeout'});assert.equal(await bounded(Promise.resolve('session'),50),'session');
+console.log('PASS: edit dates/times, archive/restore, preserve history and taken entries, sync edited snapshots, network timeout');

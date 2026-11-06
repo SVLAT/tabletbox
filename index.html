@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <meta name="theme-color" content="#d9eaf3" />
+    <meta name="theme-color" content="#0c1726" />
     <meta name="description" content="Мягкие и понятные напоминания о лекарствах" />
     <link rel="manifest" href="manifest.webmanifest" />
     <link rel="apple-touch-icon" href="icon.svg" />
@@ -16,6 +16,7 @@
     <link rel="stylesheet" href="test-ready.css" />
     <link rel="stylesheet" href="account.css" />
     <link rel="stylesheet" href="release.css?v=12" />
+    <link rel="stylesheet" href="update.css?v=14" />
   </head>
   <body>
     <main class="app-shell">
@@ -113,7 +114,20 @@
     <dialog id="quickListDialog"><form method="dialog" id="quickListForm"><div class="dialog-header"><div><p class="eyebrow">На каждый день</p><h2>Мои быстрые лекарства</h2></div><button class="close" value="cancel">×</button></div><div id="quickListItems"></div><label>Новый препарат<input name="newMedicine" placeholder="Например, Нурофен — от боли" /></label><button class="primary-button" value="default">Добавить в список <span>→</span></button></form></dialog>
     <dialog id="accountDialog"><form method="dialog" id="accountForm"><div class="dialog-header"><div><p class="eyebrow">Профиль</p><h2>Личный аккаунт</h2></div><button class="close" value="cancel">×</button></div><p class="account-note" id="accountNote"></p><label>Полное имя<input required name="fullName" placeholder="Например, Роман Вдовин" /></label><label>Как вас называть?<input required name="displayName" placeholder="Например, Рома" /></label><label id="accountEmailField">Почта для входа <input name="email" type="email" placeholder="liza@example.com" /></label><button class="primary-button" value="default">Сохранить профиль <span>→</span></button></form></dialog>
     <div id="toast" role="status"></div>
-    <script type="module" src="app.js?v=13"></script>
+    <section class="settings-view" id="coursesView" hidden>
+      <header class="view-header"><button class="back-button" id="backSettings" aria-label="Назад в настройки">←</button><div><p class="eyebrow">Настройки</p><h2>Мои курсы</h2></div></header>
+      <p class="section-hint">Нажмите на курс, чтобы изменить даты, время приёмов и описание. История прошлых дней сохранится.</p><div id="courseManager"></div>
+    </section>
+    <dialog id="editCourseDialog"><form id="editCourseForm"><div class="dialog-header"><h2>Редактировать курс</h2><button class="close" type="button" aria-label="Закрыть">×</button></div>
+      <input name="id" type="hidden"><label>Название<input name="name" required maxlength="100"></label>
+      <label>Начало курса<input name="start" type="date" required></label><label>Длительность, дней<input name="days" type="number" required min="1" max="3660"></label>
+      <label>Время приёмов<input name="times" placeholder="12:00, 16:00, 20:00" required></label>
+      <label>Короткое описание<textarea name="description" maxlength="240" rows="3" placeholder="Например, после еды"></textarea></label>
+      <p class="section-hint">Изменения действуют с сегодняшнего дня. Уже сделанные отметки не удаляются.</p><p id="courseError" role="alert"></p>
+      <button class="primary-button" type="submit">Сохранить курс</button><button id="archiveCourse" class="account-footer danger" type="button">Удалить курс из расписания</button>
+    </form></dialog>
+    <dialog id="themeDialog"><div class="theme-panel"><div class="dialog-header"><h2>Оформление</h2><button class="close" type="button" aria-label="Закрыть">×</button></div><button class="theme-choice" data-theme="dark">Ночной голубой <small>Тёмный фон, мягкие голубые акценты</small></button><button class="theme-choice" data-theme="light">Светлая пастель <small>Светлая тема</small></button></div></dialog>
+    <script type="module" src="app.js?v=14"></script>
     <script src="pwa.js"></script>
   </body>
 </html>

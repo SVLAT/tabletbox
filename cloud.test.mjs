@@ -1,0 +1,9 @@
+import {readFile} from 'node:fs/promises';import assert from 'node:assert/strict';
+let stored=null,options,listener;
+globalThis.window={localStorage:{}};globalThis.location={origin:'https://example.test',pathname:'/tabletbox/'};
+globalThis.__testSdk={createClient:(url,key,o)=>{options=o;return {auth:{getSession:async()=>({data:{session:stored}}),onAuthStateChange:fn=>{listener=fn},signInWithPassword:async({email,password})=>password==='bad'?{error:{code:'invalid_credentials'}}:{data:{session:stored={user:{id:'test-user',email}}}},signOut:async()=>{stored=null;return {data:{}}}}};}};
+let src=await readFile(new URL('./cloud.js',import.meta.url),'utf8');src=src.replace(/import \{SUPABASE_URL,SUPABASE_ANON_KEY\} from '[^']+';/,"const SUPABASE_URL='https://test.supabase.co',SUPABASE_ANON_KEY='public-test';").replace("'./network.js?v=14'",JSON.stringify(new URL('./network.js',import.meta.url).href)).replace("import('https://esm.sh/@supabase/supabase-js@2')",'Promise.resolve(globalThis.__testSdk)');
+const {cloud}=await import('data:text/javascript;base64,'+Buffer.from(src).toString('base64'));assert.equal(await cloud.init(),null);assert.equal(options.auth.persistSession,true);assert.equal(options.auth.autoRefreshToken,true);assert.equal(options.auth.storage,window.localStorage);await assert.rejects(cloud.signIn('test@example.test','bad'),{code:'invalid_credentials'});
+const s=await cloud.signIn('test@example.test','synthetic-test-password');assert.equal(s.user.id,'test-user');assert.equal((await cloud.init()).user.id,'test-user','restores saved session');
+let event;cloud.watch((session,e)=>{event=e});listener('TOKEN_REFRESHED',s);await new Promise(r=>setTimeout(r,10));assert.equal(event,'TOKEN_REFRESHED');await cloud.signOut();assert.equal(await cloud.init(),null);
+console.log('PASS: password login/errors, persistent session configuration, session restoration, token refresh event, logout');
