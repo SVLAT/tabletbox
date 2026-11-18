@@ -75,7 +75,7 @@ function accountScreen(message="",error=false){
   $("sheetBody").replaceChildren();$("sheetTitle").textContent="";
   $("toast").textContent="";category=null;selected=C.day();month=selected.slice(0,7);
   $("workspace").hidden=true;$("mode").hidden=true;$("welcome").hidden=false;
-  $("enter").disabled=false;$("tryDemo").disabled=false;
+  $("enter").disabled=false;$("tryDemo").hidden=false;$("tryDemo").disabled=false;$("cancelEnter").hidden=true;
   render();authNote(message||"Вход через Puter",error);
 }
 function authNote(text,error=false){$("authStatus").textContent=text;$("authStatus").classList.toggle("error",error);}
@@ -96,7 +96,10 @@ async function enter(interactive){
   if(!sdk){authNote("Сервис входа загружается. Если сообщение осталось, обнови страницу.",true);return;}
   if(authBusy||(!interactive&&(!sdk.auth.isSignedIn()||!markerValue())))return;
   authBusy=true;const stamp=++epoch;
-  $("enter").disabled=true;$("tryDemo").disabled=true;authNote(interactive?"Заверши вход в окне Puter.":"Открываем твой свод…");
+  $("enter").disabled=true;$("tryDemo").hidden=true;$("cancelEnter").hidden=false;authNote(interactive?"Заверши вход в окне Puter.":"Открываем твой свод…");
+  const hint=setTimeout(()=>{
+    if(stamp===epoch&&interactive)authNote("Если окно Puter не появилось, открой Свод в Safari или другом обычном браузере.");
+  },6000);
   let session;
   try{
     if(interactive)await sdk.auth.signIn({attempt_temp_user_creation:false,request_auth:true});
@@ -112,10 +115,12 @@ async function enter(interactive){
     session?.close();
     if(stamp===epoch)accountScreen(authMessage(e),true);
   }finally{
-    if(stamp===epoch){authBusy=false;$("enter").disabled=false;$("tryDemo").disabled=false;}
+    clearTimeout(hint);
+    if(stamp===epoch){authBusy=false;$("enter").disabled=false;$("tryDemo").hidden=false;$("tryDemo").disabled=false;$("cancelEnter").hidden=true;}
   }
 }
 $("enter").onclick=()=>enter(true);
+$("cancelEnter").onclick=()=>accountScreen("Вход отменён.");
 $("tryDemo").onclick=()=>{accountScreen();data=sample();demo=true;openWorkspace();};
 function signOut(){
   const sdk=globalThis.puter;
