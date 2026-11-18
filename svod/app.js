@@ -16,7 +16,7 @@ const displayDate=(iso,opts)=>C.local(iso).toLocaleDateString("ru-RU",opts);
 const newId=()=>globalThis.crypto?.randomUUID?.()||Date.now().toString(36)+Math.random().toString(36).slice(2);
 const blank=()=>({version:1,expenses:[],tasks:[]});
 let selected=C.day(),month=selected.slice(0,7),category=null,toastTimer,voiceSession=null;
-let demo=false,data=blank(),busy=false,account=null,epoch=0,authBusy=false,readNonce=0;
+let demo=false,data=blank(),busy=false,account=null,epoch=0,authBusy=false,readNonce=0,identityFailed=false;
 const marker="svod.active.account.v1";
 function markerValue(){try{return localStorage.getItem(marker);}catch{return null;}}
 function mark(value){try{if(value)localStorage.setItem(marker,value);else localStorage.removeItem(marker);}catch{}}
@@ -75,8 +75,8 @@ function accountScreen(message="",error=false){
   $("sheetBody").replaceChildren();$("sheetTitle").textContent="";
   $("toast").textContent="";category=null;selected=C.day();month=selected.slice(0,7);
   $("workspace").hidden=true;$("mode").hidden=true;$("welcome").hidden=false;
-  $("enter").disabled=false;$("tryDemo").hidden=false;$("tryDemo").disabled=false;$("cancelEnter").hidden=true;
-  render();authNote(message||"Вход через Puter",error);
+  $("enter").disabled=!globalThis.puter&&!identityFailed;$("tryDemo").hidden=false;$("tryDemo").disabled=false;$("cancelEnter").hidden=true;
+  render();authNote(message||(globalThis.puter?"Вход через Puter":"Подключаем сервис входа…"),error);
 }
 function authNote(text,error=false){$("authStatus").textContent=text;$("authStatus").classList.toggle("error",error);}
 function openWorkspace(){
@@ -116,10 +116,10 @@ async function enter(interactive){
     if(stamp===epoch)accountScreen(authMessage(e),true);
   }finally{
     clearTimeout(hint);
-    if(stamp===epoch){authBusy=false;$("enter").disabled=false;$("tryDemo").hidden=false;$("tryDemo").disabled=false;$("cancelEnter").hidden=true;}
+    if(stamp===epoch){authBusy=false;$("enter").disabled=!globalThis.puter&&!identityFailed;$("tryDemo").hidden=false;$("tryDemo").disabled=false;$("cancelEnter").hidden=true;}
   }
 }
-$("enter").onclick=()=>enter(true);
+$("enter").onclick=()=>identityFailed?location.reload():enter(true);
 $("cancelEnter").onclick=()=>accountScreen("Вход отменён.");
 $("tryDemo").onclick=()=>{accountScreen();data=sample();demo=true;openWorkspace();};
 function signOut(){
@@ -253,8 +253,18 @@ window.addEventListener("pageshow",e=>{if(e.persisted){accountScreen();enter(fal
 window.addEventListener("pagehide",()=>{if(account)accountScreen();});
 accountScreen();
 const sdkTag=$("identitySDK");
-if(globalThis.puter)enter(false);
+function sdkReady(){
+  if(!globalThis.puter?.auth){sdkFailed();return;}
+  identityFailed=false;
+  if(!demo&&!account&&!authBusy){$("enter").disabled=false;$("enter").textContent="Войти или зарегистрироваться";authNote("Вход через Puter");enter(false);}
+}
+function sdkFailed(){
+  identityFailed=true;$("enter").disabled=false;$("enter").textContent="Повторить подключение";
+  authNote("Не удалось подключиться к Puter. Проверь интернет.",true);
+}
+if(globalThis.puter?.auth)sdkReady();
 else {
-  sdkTag.addEventListener("load",()=>{if(!demo&&!account)enter(false);});
-  sdkTag.addEventListener("error",()=>authNote("Сервис входа недоступен. Проверь интернет и обнови страницу.",true));
+  sdkTag.addEventListener("load",sdkReady);
+  sdkTag.addEventListener("error",sdkFailed);
+  setTimeout(()=>{if(!globalThis.puter?.auth)sdkFailed();},15000);
 }
