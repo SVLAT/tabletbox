@@ -1,21 +1,18 @@
-import {SUPABASE_URL,SUPABASE_ANON_KEY} from './supabase-config.js?v=12';
-import {bounded,timedFetch} from './network.js?v=14';
-let client,preparing;const watchers=new Set();
-async function prepare(){
- if(client)return client;
- if(!preparing)preparing=bounded(import('https://esm.sh/@supabase/supabase-js@2')).then(({createClient})=>{client=createClient(SUPABASE_URL,SUPABASE_ANON_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true,storage:window.localStorage},global:{fetch:timedFetch}});client.auth.onAuthStateChange((event,session)=>{if(['SIGNED_IN','SIGNED_OUT','PASSWORD_RECOVERY','TOKEN_REFRESHED','USER_UPDATED'].includes(event))for(const fn of watchers)setTimeout(()=>{Promise.resolve(fn(session,event)).catch(()=>{});},0);});return client;}).catch(e=>{preparing=null;throw e;});
- return preparing;
-}
-async function auth(method,...args){const c=await prepare();const result=await bounded(c.auth[method](...args));if(result.error)throw result.error;return result.data;}
+import {connect} from './puter-store.js?v=16';
+import {bounded} from './network.js?v=14';
+const marker='tabletbox.puter.active.v1',watchers=new Set();let account=null,generation=0;
+const mark=value=>{if(value)localStorage.setItem(marker,value);else localStorage.removeItem(marker);};
+const session=()=>account?{user:{id:account.user.uuid,username:account.user.username,email:account.user.email||'',user_metadata:{displayName:account.user.username}},provider:'puter'}:null;
+function publish(){const s=session();for(const fn of watchers)setTimeout(()=>Promise.resolve(fn(s)).catch(()=>{}),0);return s;}
+function sdk(){if(!globalThis.puter?.auth)throw Error('Puter ещё не загрузился. Проверьте интернет и обновите страницу.');return globalThis.puter;}
+function ready(){if(globalThis.puter?.auth)return Promise.resolve();return bounded(new Promise((resolve,reject)=>{const script=document.getElementById('identitySDK');script.addEventListener('load',()=>globalThis.puter?.auth?resolve():reject(Error('Не удалось подключить Puter')),{once:true});script.addEventListener('error',()=>reject(Error('Не удалось загрузить Puter')),{once:true});}),15000);}
 export const cloud={
- ready:!!(SUPABASE_URL&&SUPABASE_ANON_KEY),
- async init(){if(!this.ready)return null;return (await auth('getSession')).session;},
- watch(fn){watchers.add(fn);return()=>watchers.delete(fn);},
- async signIn(email,password){return(await auth('signInWithPassword',{email,password})).session;},
- async signUp(email,password,profile){return auth('signUp',{email,password,options:{emailRedirectTo:location.origin+location.pathname,data:profile}});},
- async recover(email){return auth('resetPasswordForEmail',email,{redirectTo:location.origin+location.pathname});},
- async password(password){return auth('updateUser',{password});},
- async signOut(){return auth('signOut',{scope:'local'});},
- async pull(userId){const c=await prepare();const {data,error}=await bounded(c.from('app_state').select('data').eq('user_id',userId).maybeSingle());if(error)throw error;return data?.data||null;},
- async push(userId,data){const c=await prepare();const {error}=await bounded(c.from('app_state').upsert({user_id:userId,data,updated_at:new Date().toISOString()}));if(error)throw error;}
+ ready:true,watch(fn){watchers.add(fn);return()=>watchers.delete(fn);},
+ async init(){await ready();const p=sdk(),saved=localStorage.getItem(marker);if(!saved||!p.auth.isSignedIn())return null;const stamp=++generation,user=await bounded(p.auth.getUser());if(stamp!==generation)return null;if(user.uuid!==saved){mark(null);return null;}account=connect(p,user);return session();},
+ async signIn(){const p=sdk(),stamp=++generation;/* Call from the user's click before any await: Safari popup requirement. */const login=p.auth.signIn({attempt_temp_user_creation:false,request_auth:true});await bounded(login,120000);if(stamp!==generation)throw Object.assign(Error('Вход отменён'),{code:'auth_window_closed'});const user=await bounded(p.auth.getUser());if(stamp!==generation)throw Error('Вход отменён');account?.close();account=connect(p,user);mark(user.uuid);return session();},
+ cancel(){generation++;},
+ async signOut(){generation++;const owner=account?.user.uuid;account?.close();account=null;if(!owner||localStorage.getItem(marker)===owner)mark(null);publish();},
+ async refresh(){if(!account)return;const p=sdk();if(!p.auth.isSignedIn()||localStorage.getItem(marker)!==account.user.uuid){await this.signOut();return;}try{account.check();}catch{await this.signOut();}},
+ async pull(id){if(!account||account.user.uuid!==id)throw Error('Войдите в свой аккаунт Puter');return account.read();},
+ async push(id,data){if(!account||account.user.uuid!==id)throw Error('Войдите в свой аккаунт Puter');return account.write(data);}
 };

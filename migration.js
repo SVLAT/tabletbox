@@ -1,0 +1,11 @@
+import {normalize} from './model.js?v=16';
+import {validState} from './puter-store.js?v=16';
+export function parseBackup(raw){const value=typeof raw==='string'?JSON.parse(raw):raw;if(!validState(value))throw Error('Это не резервная копия Таблетницы. Ничего не изменено.');return normalize(value);}
+export function localDiaries(storage){const found=[];for(let i=0;i<storage.length;i++){const key=storage.key(i);if(!/^pillbox:(user:|guest:v2$|local:v1$)/.test(key))continue;try{const data=parseBackup(storage.getItem(key));found.push({key,data,name:data.profile.fullName||data.profile.displayName||'Локальный дневник'});}catch{}}return found;}
+export async function legacyDiary(storage,fetcher=fetch){
+ const {SUPABASE_URL:url,SUPABASE_ANON_KEY:publicKey}=await import('./supabase-config.js?v=12');const ref=new URL(url).hostname.split('.')[0],key=`sb-${ref}-auth-token`;let token;
+ try{token=JSON.parse(storage.getItem(key));}catch{}if(!token?.access_token)throw Error('Сохранённого входа Supabase на этом устройстве нет. Перенесите локальный дневник или JSON-копию. Для данных только на сервере нужен доступ владельца Supabase.');
+ async function call(path,options={}){const r=await fetcher(url+path,{...options,headers:{apikey:publicKey,'Content-Type':'application/json',Authorization:'Bearer '+token.access_token,...options.headers},signal:AbortSignal.timeout(15000)});if(!r.ok)throw Error('Старый вход Supabase недействителен или сервер недоступен. Локальные копии не удалены.');return r.json();}
+ if(token.expires_at&&token.expires_at*1000<Date.now()&&token.refresh_token){const r=await fetcher(url+'/auth/v1/token?grant_type=refresh_token',{method:'POST',headers:{apikey:publicKey,'Content-Type':'application/json'},body:JSON.stringify({refresh_token:token.refresh_token}),signal:AbortSignal.timeout(15000)});if(!r.ok)throw Error('Старый вход истёк. Используйте локальную или экспортированную копию дневника.');token=await r.json();storage.setItem(key,JSON.stringify(token));}
+ const user=await call('/auth/v1/user');if(!user.id)throw Error('Не удалось подтвердить владельца старого аккаунта');const rows=await call('/rest/v1/app_state?select=data&user_id=eq.'+encodeURIComponent(user.id));if(!rows[0]?.data)throw Error('В старом аккаунте нет сохранённого дневника');return {name:user.email||'Аккаунт Supabase',data:parseBackup(rows[0].data)};
+}
